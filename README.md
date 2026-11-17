@@ -15,9 +15,11 @@ Pre-registration of the study "Evolving Lightweight LLM Pipelines for Cost-Aware
 | Missingness injection | `src/llm_wrangler/inject.py`, `scripts/make_masks.py` |
 | Masks and seeds | `masks/` with `manifest.json` (SHA-256 of every mask); seeds in `configs/experiment.yaml`, section `missingness` |
 
-## Regenerating the masks
+## Data
 
-The tables themselves are not copied here. Put each table's `clean.csv` under `data/raw/<table>/` (Hospital and Beers from the Raha repository, Restaurant converted from the R package `restaurant`) and run
+The three tables are in `data/raw/<table>/clean.csv`. Hospital and Beers come from the Raha repository (Apache-2.0). The Beers data is J.-N. Hould's Craft Beers Dataset (DbCL v1.0 on Kaggle, MIT on GitHub). Hospital goes back to the CMS Hospital Compare data, which is public-use with no licence stated. Restaurant is converted from the R package `restaurant` (CC0).
+
+## Regenerating the masks
 
     python scripts/make_masks.py --tables hospital beers restaurant
 
