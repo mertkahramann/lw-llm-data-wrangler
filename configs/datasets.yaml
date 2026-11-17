@@ -1,0 +1,53 @@
+hospital:
+  source: https://github.com/BigDaMa/raha/tree/master/datasets/hospital
+  ground_truth: clean.csv
+  n_rows: 1000
+  numeric_columns: {Score: percent, Sample: count_patients}
+  mar_driver: Condition
+  missing_markers: ["empty", ""]
+  id_columns: [index]
+  text_columns: []
+  cluster_column: ProviderNumber
+beers:
+  source: https://github.com/BigDaMa/raha/tree/master/datasets/beers
+  ground_truth: clean.csv
+  n_rows: 2410
+  numeric_columns: {ounces: ounces, abv: float, ibu: float}
+  mar_driver: ounces
+  missing_markers: [""]
+  id_columns: [index, id]
+  text_columns: [beer-name]
+  cluster_column: brewery_id
+restaurant:
+  source: https://github.com/resteorts/restaurant
+  ground_truth: clean.csv
+  n_rows: 864
+  numeric_columns: {}
+  missing_markers: [""]
+  id_columns: [id, class]  # class groups duplicate restaurants
+  text_columns: [name, addr]
+  mar_driver: phone
+  mar_driver_transform: area_code
+  cluster_column: class
+  prior_protocol:
+    source: https://github.com/HazyResearch/fm_data_tasks
+    archive: https://fm-data-tasks.s3.us-west-1.amazonaws.com/datasets.tar.gz
+    path_in_archive: datasets/data_imputation/Restaurant
+    column: city
+creditcard:
+  source: https://www.openml.org/d/1597
+  role: negative_control
+  drop_columns: [Class]
+  subsample_rows: 200
+  subsample_seed: 0
+  subsample_method: uniform_random
+  categorical_columns: []
+  mar_driver: Time
+  numeric_columns: {Time: float, V1: float, V2: float, V3: float, V4: float, V5: float, V6: float, V7: float,
+                    V8: float, V9: float, V10: float, V11: float, V12: float, V13: float, V14: float, V15: float,
+                    V16: float, V17: float, V18: float, V19: float, V20: float, V21: float, V22: float,
+                    V23: float, V24: float, V25: float, V26: float, V27: float, V28: float, Amount: float}
+  missing_markers: [""]
+  id_columns: []
+  text_columns: []
+  cluster_column: null

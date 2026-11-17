@@ -1,0 +1,189 @@
+tables:
+  main: [hospital, beers, restaurant]
+  negative_control: creditcard
+evaluation_targets:
+  per_mask: 200
+  stratification: proportional_by_column
+  allocation: largest_remainder
+  q_column_weights: true  # w_c = (N_c/N) / (n_c/n)
+  publish: [N_c, n_c, inclusion_probabilities, achieved_vs_mask_proportions]
+  flag_columns_with_fewer_targets_than: 10
+  completeness_rule: two_sided
+  seed_offset: 10000
+  other_masked_cells: remain_missing
+  deterministic_imputers_fit_on: full_masked_table
+  report_effective_clusters: true
+  sampling_sensitivity: {table: hospital, mechanism: MCAR, rate: 0.20, seeds: [0,1,2,3,4], methods: [B5, B6, EV], compare: [targets_200, all_masked]}
+exact_request_cache:
+  key: sha256(table, mask, ordered_batch_cells, serialized_prompt, model_hash, quantization, runtime_build, seed, generation_settings)
+  equivalence_test_before_evolution: true
+  replay_latency: dev_search_only_validated
+controls:
+  exhaustive:
+    run: true
+    reported_as: [upper_reference, cost_quality_map]
+    if_pilot_shows_it_does_not_fit: reduce_G3_or_G2_alleles_log_in_spec_15_and_repeat_the_pilot
+  random_search:
+    unique_evaluations: same_as_search
+    first: [zero_ab, zero_cd]
+    then: uniformly_drawn_distinct_policies
+    seed: same_as_frozen_ev_search_seed
+  founders_only: true
+  replay:
+    search_seeds: 10000
+    report: [p_optimum, regret_mean_median_p90, rank_mean, share_ev_better_tie_rs_better]
+missingness:
+  mechanisms: [MCAR, MAR, MNAR]
+  rates: [0.10, 0.20, 0.30]
+  test_seeds: [0, 1, 2, 3, 4]
+  dev_seeds: {MCAR: 100, MAR: 101, MNAR: 102}  # rate 0.20
+  pilot_seed: 999  # never a test mask
+  sampling: exact_count_weighted_without_replacement
+  common_target_universe: true
+  logistic_slope: 2.0
+  mnar_categorical_weight_ratio: 3.0
+  mnar_rule: per_column_normalized
+  record_per_column_realized_rates: true
+  masks_dir: masks/
+target_column_rule:
+  exclude_identifiers: [index, id]
+  min_distinct: 2
+  max_unique_ratio: 0.85
+  exclude_mar_driver: all_mechanisms
+  missing_markers: ["", "empty", "N/A", "nan"]
+budget:
+  calibration_masks: dev_seeds
+  token_per_cell_multiplier: 1.05  # x B5 tokens per target on the dev masks
+  time_per_cell_multiplier: 1.10  # x B5 seconds per target on the dev masks
+  time_scope: all_compute
+  reservation:
+    tokens: local_prompt_tokens_plus_max_output
+    time: dev_p95_latency_per_inflight_call
+  report_exceedances: true
+  b5_over_cap_fill: mean_mode
+  b5_invalid_or_failed_fill: mean_mode
+  b5_target_order: seeded_label_free_permutation
+  b5_missforest_fit: false
+  log_missforest_fit_time_separately: true
+  shared_across: [B5, B6, EV]
+  deterministic_methods: {methods: [B1, B2, B3, B4, B7], token_cap: not_applicable, time_cap: not_enforced_run_to_completion, report_full_wall_time: true, flag_if_wall_time_exceeds_T: true}
+  stop_on_first_unreservable_llm_request: true
+  stop_action: fallback_remaining_llm_targets
+  dispatch_requirements: [token_reservation_fits, time_reservation_fits, positive_wall_time_left]
+  ordering_single_cell: descending_within_column_uncertainty_percentile
+  ordering_p4_batch: descending_max_uncertainty_then_seeded_stable_tie
+  p4_batch_atomic: true
+  policy_evolved: false
+fitness:  # F = Q - w_tok*T - w_lat*L - w_viol*V
+  w_tokens: 0.05
+  w_latency: 0.05
+  w_violations: 0.10
+  sample_cells_per_table: 100
+evolution:
+  founders: [zero_ab, zero_cd]
+  generation_0: founders_plus_uniformly_drawn_distinct_policies
+  population_size: 4
+  children_per_generation: 4
+  generations: 7  # not counting generation 0
+  mutation_gene_prob: "1/3"  # per active gene
+  frozen_ev_search_seed: 20261118
+  parent_selection: binary_tournament_on_F
+  crossover: uniform
+  crossover_gene_prob: 0.5
+  survival: best_population_size_of_parents_and_children_by_F  # ties: earlier evaluation wins
+  duplicate_redraws: 20  # then a random unevaluated policy
+  result: best_policy_evaluated  # ties: earlier evaluation wins
+  genealogy_log: all_individuals_with_parents_crossover_mask_and_mutations
+phenotypes:
+  canonicalize_inactive_genes: true
+  distinct_phenotypes: 84
+uncertainty_ordering:
+  measure: {categorical: one_minus_max_proba, numeric: tree_prediction_std}
+  normalization: within_column_percentile
+  validation_min_spearman: 0.1
+  validation_tables: {in_table: same_table, loto_transfer: source_tables_only}
+ablations:
+  rate: 0.20
+  mechanisms: [MCAR, MAR, MNAR]
+  seeds: [0, 1, 2, 3, 4]
+  variants: [A1_random_phenotype, A1p_random_search_equal_budget_founders_first, A2_no_tool_routing, A3_no_retrieval]
+contamination_check:
+  mechanism: MCAR
+  rate: 0.10
+  seeds: [0, 1, 2, 3, 4]
+  methods: [B5, EV]
+restaurant_prior_protocol:
+  context_and_fitting_splits: [train, valid]
+  test_split_label_hidden: city
+  budget_calibration_split: valid
+  phenotypes:
+    EV_a: {evolve_on_rows: [train, valid], dev_seeds: {MCAR: 200, MAR: 201, MNAR: 202}, rate: 0.20}
+    EV_b: {source: loto_phenotype_heldout_restaurant}
+  test_label_isolation_scope: [inference_fitting, retrieval, candidates, fitness, phenotype_selection, thresholds, budget_calibration, ordering_validation]
+  test_split_read_by: scorer_only_after_freeze
+pilot:
+  table: hospital
+  mechanism: MCAR
+  rate: 0.10
+  seed: 999
+baselines:
+  B2_knn: {k: 5, distance: gower}
+  B3_mice: {iterations: 10}
+  B4_missforest: {n_estimators: 100, max_iter: 10}
+  B7_hyperimpute:
+    package: hyperimpute
+    version: null
+    learners: package_default
+    optimizer: package_default
+    random_state: 0
+    select_lazy: null
+    categorical_encoding: ordinal_from_observed_values_decode_to_observed_domain
+    wall_time_includes_model_search: true
+    status: pending_pilot_gate
+    pilot_gate:
+      mask: {table: hospital, mechanism: MCAR, rate: 0.10, seed: 999}
+      installs_in_locked_env: required
+      returns_all_targets_in_observed_domain: required
+      non_target_masked_cells_untouched: required
+      categorical_targets_use_classification_path: required
+      max_wall_time_ratio_vs_B4: 10
+      quality_is_criterion: false
+      engineering_correction_rounds: 1
+      on_fail_time_only: secondary
+      on_fail_install_or_output: related_work_only
+      removal_after_pass: never
+      test_mask_crash_fallback: mean_mode_counted
+      record_outcome_in: spec_section_15
+  B5_standalone_llm: {prompt: P1_serialize, context_rows: 10, context_selection: random, target_order: seeded_label_free_permutation, missforest_fit: false, fallback: mean_mode}
+statistics:
+  primary: paired_cluster_bootstrap_delta_q
+  bootstrap_resamples: 10000
+  cluster_pools_all_seeds: true
+  clusters: {hospital: ProviderNumber, beers: brewery_id, restaurant: class_duplicate_entity_group, creditcard: row}
+  cluster_labels_source: clean_table_scorer_only
+  report_seed_level_effects: true
+  sensitivity: cell_bootstrap
+  exploratory:
+    omnibus: friedman
+    posthoc: nemenyi
+    alpha: 0.05
+    blocks: table x mechanism x rate (main tables only, seed-averaged)
+  efficiency_zero_token_convention: not_reported
+claim_rule:
+  threshold_status: descriptive_support_not_familywise
+  ci: paired_cluster_bootstrap_95
+  Q_X: {cells: table x mechanism x rate, n_cells: 27, min_cells_ci_above_zero: 14}
+  H1: Q_X_for_every_confirmatory_comparator
+  E_t: {rate: 0.20, pool_mechanisms: true, not_pareto_dominated: true, efficiency_vs_B5_ci_above_zero: true}
+  H2: E_t_on_all_main_tables
+  S: {comparator: A1_random_genome, rate: 0.20, n_cells: 9, min_cells_ci_above_zero: 5}
+  branches:
+    - {id: 1, if: "S and any Q_X", claim: template_A_supported_sets_only}
+    - {id: 2, if: "not S and any Q_X", claim: policy_credited_not_search}
+    - {id: 3, if: "no Q_X and any E_t", claim: pareto_efficiency_only}
+    - {id: 4, if: otherwise, claim: wording_C_cost_quality_map}
+other_budget_runs:
+  allowed: true
+  declare_before_running: true
+  apply_identically_to: [B5, B6, EV]
+  settings: []

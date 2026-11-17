@@ -1,0 +1,61 @@
+tables:
+  hospital:
+    b_t: 1267.509
+    tau_t: 0.8246
+    p95_latency_s: 1.3081
+    b5_mean_tokens_per_target: 1207.152
+    b5_seconds_per_target: 0.7497
+    dev_targets: 600
+    dev_masks:
+    - MAR_20_s101
+    - MCAR_20_s100
+    - MNAR_20_s102
+    requests: 600
+    calibrated_utc: '2026-11-17T10:14:55Z'
+  beers:
+    b_t: 583.844
+    tau_t: 0.3956
+    p95_latency_s: 0.4599
+    b5_mean_tokens_per_target: 556.042
+    b5_seconds_per_target: 0.3597
+    dev_targets: 600
+    dev_masks:
+    - MAR_20_s101
+    - MCAR_20_s100
+    - MNAR_20_s102
+    requests: 600
+    calibrated_utc: '2026-11-17T10:18:31Z'
+  restaurant:
+    b_t: 462.809
+    tau_t: 0.2947
+    p95_latency_s: 0.3052
+    b5_mean_tokens_per_target: 440.77
+    b5_seconds_per_target: 0.2679
+    dev_targets: 600
+    dev_masks:
+    - MAR_20_s101
+    - MCAR_20_s100
+    - MNAR_20_s102
+    requests: 600
+    calibrated_utc: '2026-11-17T10:21:12Z'
+rule: 'spec §7.1: b_t = 1.05 x B5 tokens/target, tau_t = 1.10 x B5 s/target on development
+  masks; label-free'
+model:
+  backend: llama.cpp
+  base_url: http://127.0.0.1:8080
+  model_name: llama31_8b_q4km
+  model_path: local/models/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
+  model_sha256: 7b064f5842bf9532c91456deda288a1b672397a54fa729aa665952863033557c
+  quantization: Q4_K_M
+  runtime_build: b1-b1b770d
+  n_ctx: 4096
+  total_slots: 1
+  chat_template_sha256: 93c0e9aa3629bbd77e68dbc0f5621f6e6b23aa8d74b932595cdb8d64684526d7
+  chat_template_kwargs:
+    date_string: 26 Jul 2024
+machine:
+  node: DESKTOP-2CFI0S2
+  system: Linux 6.18.58.1-microsoft-standard-WSL2
+  processor: x86_64
+  python: 3.12.3
+slots: 1

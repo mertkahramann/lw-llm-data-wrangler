@@ -1,0 +1,53 @@
+genes:
+  G1_tool_choice:  # (categorical tool, numeric tool)
+    alleles:
+      - [llm, llm]
+      - [llm, knn]
+      - [llm, missforest]
+      - [knn, llm]
+      - [knn, knn]
+      - [knn, missforest]
+      - [missforest, llm]
+      - [missforest, knn]
+      - [missforest, missforest]
+  G2_prompt_template:
+    alleles: [P1_serialize, P2_instruct, P3_domain_hint, P4_domain_hint_batched]
+  G3_context_rows:
+    alleles: [0, 3, 10, 20]
+founders:
+  status: frozen
+  rules:
+    differ_in_all_genes: true
+    both_route_to_llm: true
+    literature_matrix_ids_required: true
+  zero_ab:
+    genome: {G1_tool_choice: [llm, missforest], G2_prompt_template: P3_domain_hint, G3_context_rows: 10}
+    literature_ids: [M03, M72, M53, M106, M07, M01, M32, M14, M04, M60]
+  zero_cd:
+    genome: {G1_tool_choice: [llm, knn], G2_prompt_template: P4_domain_hint_batched, G3_context_rows: 3}
+    literature_ids: [M03, M72, M53, M12, M42, M58, M15, M75]
+fixed_hybrid_B6:
+  G1_tool_choice: [llm, missforest]
+  G2_prompt_template: P3_domain_hint
+  G3_context_rows: 10
+constitution:
+  C1_observed_cells_unchanged: hard
+  C2_type_validity: hard_fallback
+  C3a_numeric_range_margin: 0.10  # share of the observed range
+  C3b_categorical_in_domain: soft  # out-of-domain answers are counted but kept
+  C4_budget: pre_dispatch_reservation
+  C5_completeness: hard_two_sided
+  C6_batch_integrity: hard_fallback
+  C7_abstention_valid: hard_fallback_counted_separately
+  C8_dependency_consistency: not_adopted
+  fallback_imputer: missforest
+fixed_settings:
+  llm_cell_priority: descending_within_column_uncertainty_percentile
+  llm_budget_policy: stop_on_first_unreservable_request
+  llm_budget_source: shared_ex_ante_B5_calibrated_token_and_time_caps
+  llm_batch_policy: P4_same_row_atomic_max5_priority_by_max_uncertainty
+  llm_budget_fallback: missforest
+  budget_share_gene: none
+  p3_max_candidates: 20
+  p4_max_cells_per_call: 5
+  similarity: char3gram_tfidf_cosine

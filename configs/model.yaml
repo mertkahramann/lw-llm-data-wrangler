@@ -1,0 +1,39 @@
+core:
+  model: Llama 3.1 8B Instruct
+  model_key: llama31_8b_q4km
+  weights: Llama 3.1 Community License
+  quantization: Q4_K_M
+  gguf_source: "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf"
+  gguf_sha256: "7b064f5842bf9532c91456deda288a1b672397a54fa729aa665952863033557c"
+  runtime: llama.cpp server
+  runtime_build: "llama.cpp v1.0.0 (source build, CUDA 12.8, arch 89, static); server build b1-b1b770d"
+  hardware: NVIDIA RTX 4070 Laptop GPU, 8 GB VRAM
+  gpu_driver: "592.82"
+  power_profile: "Power Scheme GUID: 381b4222-f694-41f0-9685-ff5bb260df2e  (Balanced) (Windows host, WSL2)"
+  context_length: 4096
+  kv_cache_precision: f16
+  parallel_slots: 1
+  cache_prompt: false
+  temperature: 0
+  seed: 1234
+  max_output_tokens_per_cell: 32  # P4: 32 per cell in the batch
+  retries: 3
+  api_spend_usd: 0
+model_pilot:
+  candidates: [llama31_8b_q4km, qwen3_8b_q4km, qwen35_9b_q4km]
+  mask: {table: hospital, mechanism: MCAR, rate: 0.10, seed: 999}
+  label_free: true
+  runs: [B5, B6, "EV:llm-llm|P2|3", "EV:llm-knn|P4|3"]
+  gates: [server_healthy_with_4096_context, fits_gpu_memory, token_count_agreement, determinism_temperature0, thinking_off, all_runs_completed]
+  ranking: valid_answer_rate
+  tie_margin: 0.01  # 1 percentage point
+  tie_break: [incumbent, fewer_tokens_per_llm_target, lower_mean_latency]
+  outcome: {first: primary, second: backup, later_places: not_selected, gate_failure: eliminated}
+  backup_used_only_if: primary_fails_before_first_development_run
+  thinking_mode: disabled
+  decided: 2026-11-17
+  primary: llama31_8b_q4km
+  backup: qwen3_8b_q4km
+  not_selected: [qwen35_9b_q4km]
+  eliminated: []
+hypothetical_reference_price_usd_per_mtok: null
